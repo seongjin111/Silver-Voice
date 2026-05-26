@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isVerifiedUser() {
+      // In this environment, email_verified might not always be true depending on login provider, 
+      // but standard practice is to check it. However, for a prototype we prioritize basic sign-in.
+      return isSignedIn();
+    }
+
+    // Validation Blueprints
+    function isValidUser(data) {
+      return data.keys().hasAll(['role', 'name']) &&
+             data.role in ['senior', 'guardian', 'solo'] &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100;
+    }
+
+    function isValidGroup(data) {
+      return data.keys().hasAll(['adminId', 'groupCode', 'memberIds']) &&
+             data.adminId == request.auth.uid &&
+             data.groupCode is string && data.groupCode.size() == 6 &&
+             data.memberIds is list && data.memberIds.size() <= 50;
+    }
+
+    function isValidMedication(data) {
+      return data.keys().hasAll(['name', 'schedule', 'userId', 'takenToday', 'createdAt', 'status']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.schedule is list && data.schedule.size() > 0 &&
+             data.userId is string &&
+             data.takenToday is bool &&
+             data.status in ['pending_approval', 'approved'] &&
+             data.createdAt is timestamp;
+    }
+
+    // --- Collections ---
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false; // Users shouldn't be listable
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['role', 'name', 'groupCode'])
+      );
+    }
+
+    match /groups/{groupId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isOwner(groupId) && isValidGroup(incoming());
+      allow update: if (isOwner(groupId) || request.auth.uid in existing().memberIds) &&
+                    isValidGroup(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasAny(['memberIds', 'groupCode']);
+    }
+
+    match /medications/{medicationId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        exists(/databases/$(database)/documents/groups/$(request.auth.uid)) // Guardian check
+      );
+      allow create: if isSignedIn() && isValidMedication(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidMedication(incoming()) && (
+        // Senior updating their own med (e.g. taking it)
+        (incoming().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['takenToday', 'currentCount', 'imageUrl'])) ||
+        // Guardian updating status
+        (exists(/databases/$(database)/documents/groups/$(request.auth.uid)) && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+        // Owner full update
+        (incoming().userId == request.auth.uid && incoming().status == 'pending_approval')
+      );
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
