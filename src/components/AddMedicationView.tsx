@@ -53,11 +53,10 @@ const AddMedicationView: React.FC<AddMedicationViewProps> = ({
           </div>
           <p className="text-2xl font-bold mb-8">약봉투 사진을 찍어서<br/>올려주세요.</p>
           
-          <input 
-            type="file" 
-            accept="image/*" 
-            capture="environment"
-            className="hidden" 
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
             ref={fileInputRef}
             onChange={onFileUpload}
           />
