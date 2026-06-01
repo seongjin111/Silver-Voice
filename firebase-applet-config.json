@@ -1,10 +1,10 @@
 {
-  "projectId": "remixed-project-id",
-  "appId": "remixed-app-id",
-  "apiKey": "remixed-api-key",
-  "authDomain": "remixed-auth-domain",
-  "firestoreDatabaseId": "remixed-firestore-database-id",
-  "storageBucket": "remixed-storage-bucket",
-  "messagingSenderId": "remixed-messaging-sender-id",
-  "measurementId": "remixed-measurement-id"
+  "projectId": "silvervoice-ab567",
+  "appId": "1:233849254112:web:f46b8d40859dc576d16085",
+  "apiKey": "AIzaSyBf_Fl0kWMc2RW59ZgAoXOdv4fwd3y0DA0",
+  "authDomain": "silvervoice-ab567.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "silvervoice-ab567.firebasestorage.app",
+  "messagingSenderId": "233849254112",
+  "measurementId": ""
 }
