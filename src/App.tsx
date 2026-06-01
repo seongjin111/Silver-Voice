@@ -316,6 +316,14 @@ function AppContent() {
   };
 
   // --- Handlers ---
+  const handleLogout = async () => {
+    localStorage.removeItem('mock_user');
+    setUser(null);
+    setProfile(null);
+    setView(View.MAIN);
+    await logout();
+  };
+
   const handleRoleSelect = async (role: 'senior' | 'guardian' | 'solo') => {
     if (!user) return;
     const newProfile: UserProfile = { role, name: user.displayName || '사용자' };
@@ -562,7 +570,7 @@ function AppContent() {
   );
   if (!profile || view === View.LOGIN_ROLE) return (
     <div className="min-h-screen bg-gray-200 flex justify-center items-start sm:items-center overflow-x-hidden">
-      <RoleSelectView onRoleSelect={handleRoleSelect} onLogout={logout} />
+      <RoleSelectView onRoleSelect={handleRoleSelect} onLogout={handleLogout} />
     </div>
   );
 
