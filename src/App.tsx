@@ -346,40 +346,46 @@ function AppContent() {
     let groupData: Group | null = null;
     let groupId: string | null = null;
 
-    const q = query(collection(db, 'groups'), where('groupCode', '==', code));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      groupId = snap.docs[0].id;
-      groupData = snap.docs[0].data() as Group;
-    } else {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k?.startsWith('group_mock_')) {
-          const d = JSON.parse(localStorage.getItem(k) || '{}');
-          if (d.groupCode === code) { groupData = d; groupId = k.replace('group_', ''); break; }
+    try {
+      const q = query(collection(db, 'groups'), where('groupCode', '==', code));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        groupId = snap.docs[0].id;
+        groupData = snap.docs[0].data() as Group;
+      } else {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k?.startsWith('group_mock_')) {
+            const d = JSON.parse(localStorage.getItem(k) || '{}');
+            if (d.groupCode === code) { groupData = d; groupId = k.replace('group_', ''); break; }
+          }
         }
       }
-    }
 
-    if (!groupId) { setFeedback("존재하지 않는 그룹 코드입니다."); return; }
+      if (!groupId) { setFeedback("존재하지 않는 그룹 코드입니다."); return; }
 
-    if (groupId.startsWith('mock_')) {
-      const updated = { ...groupData, memberIds: Array.from(new Set([...(groupData!.memberIds || []), user.uid])) };
-      localStorage.setItem(`group_${groupId}`, JSON.stringify(updated));
-    } else {
-      await setDoc(doc(db, 'groups', groupId), { memberIds: arrayUnion(user.uid) }, { merge: true });
-    }
+      if (groupId.startsWith('mock_')) {
+        const updated = { ...groupData, memberIds: Array.from(new Set([...(groupData!.memberIds || []), user.uid])) };
+        localStorage.setItem(`group_${groupId}`, JSON.stringify(updated));
+      } else {
+        await updateDoc(doc(db, 'groups', groupId), { memberIds: arrayUnion(user.uid) });
+      }
 
-    if (user.uid.startsWith('mock_')) {
-      const p = JSON.parse(localStorage.getItem(`profile_${user.uid}`) || '{}');
-      p.groupCode = code;
-      localStorage.setItem(`profile_${user.uid}`, JSON.stringify(p));
-    } else {
-      await updateDoc(doc(db, 'users', user.uid), { groupCode: code } as any);
+      if (user.uid.startsWith('mock_')) {
+        const p = JSON.parse(localStorage.getItem(`profile_${user.uid}`) || '{}');
+        p.groupCode = code;
+        localStorage.setItem(`profile_${user.uid}`, JSON.stringify(p));
+      } else {
+        await updateDoc(doc(db, 'users', user.uid), { groupCode: code } as any);
+      }
+      setProfile(prev => prev ? { ...prev, groupCode: code } : null);
+      setFeedback("그룹에 연결되었습니다!");
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (error) {
+      console.error('그룹 연결 오류:', error);
+      setFeedback("그룹 연결 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      setTimeout(() => setFeedback(null), 4000);
     }
-    setProfile(prev => prev ? { ...prev, groupCode: code } : null);
-    setFeedback("그룹에 연결되었습니다!");
-    setTimeout(() => setFeedback(null), 3000);
   };
 
   const handleUpdateGroupCode = async () => {

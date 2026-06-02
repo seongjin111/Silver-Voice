@@ -70,11 +70,18 @@ service cloud.firestore {
 
     match /groups/{groupId} {
       allow get: if isSignedIn();
-      allow list: if false;
+      allow list: if isSignedIn();
       allow create: if isOwner(groupId) && isValidGroup(incoming());
-      allow update: if (isOwner(groupId) || request.auth.uid in existing().memberIds) &&
-                    isValidGroup(incoming()) &&
-                    incoming().diff(existing()).affectedKeys().hasAny(['memberIds', 'groupCode']);
+      allow update: if isSignedIn() && (
+        // 보호자: 자신의 그룹 코드 변경 또는 멤버 관리
+        (isOwner(groupId) &&
+         isValidGroup(incoming()) &&
+         incoming().diff(existing()).affectedKeys().hasAny(['memberIds', 'groupCode'])) ||
+        // 피보호자: 자신을 멤버에 추가하는 것만 허용
+        (incoming().diff(existing()).affectedKeys().hasOnly(['memberIds']) &&
+         incoming().memberIds.size() <= 50 &&
+         request.auth.uid in incoming().memberIds)
+      );
     }
 
     match /medications/{medicationId} {
