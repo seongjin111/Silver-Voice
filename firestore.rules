@@ -93,7 +93,7 @@ service cloud.firestore {
       allow create: if isSignedIn() && isValidMedication(incoming()) && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && isValidMedication(incoming()) && (
         // Senior updating their own med (e.g. taking it)
-        (incoming().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['takenToday', 'currentCount', 'imageUrl'])) ||
+        (incoming().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['takenToday', 'currentCount', 'imageUrl', 'remainingPouches'])) ||
         // Guardian updating status
         (exists(/databases/$(database)/documents/groups/$(request.auth.uid)) && 
          incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||

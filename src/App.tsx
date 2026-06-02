@@ -619,7 +619,7 @@ function AppContent() {
               <SeniorHome profile={profile} groupCodeInput={groupCodeInput} setGroupCodeInput={setGroupCodeInput} onJoinGroup={handleJoinGroup} setView={setView} triggerReminder={triggerReminder} />
             )}
             {view === View.MAIN && profile.role === 'guardian' && (
-              <GuardianHome guardianGroup={guardianGroup} seniors={seniors} seniorStatus={seniorStatus} isEditingCode={isEditingCode} setIsEditingCode={setIsEditingCode} newGroupCode={newGroupCode} setNewGroupCode={setNewGroupCode} onUpdateGroupCode={handleUpdateGroupCode} onSelectSenior={setSelectedSenior} onResetRole={() => setView(View.LOGIN_ROLE)} />
+              <GuardianHome guardianGroup={guardianGroup} seniors={seniors} seniorStatus={seniorStatus} isEditingCode={isEditingCode} setIsEditingCode={setIsEditingCode} newGroupCode={newGroupCode} setNewGroupCode={setNewGroupCode} onUpdateGroupCode={handleUpdateGroupCode} onResetRole={() => setView(View.LOGIN_ROLE)} />
             )}
             {view === View.SENIOR_DETAIL && (selectedSenior || profile.role !== 'guardian') && (
               <SeniorDetailView 

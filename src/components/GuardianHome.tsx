@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import Button from './ui/Button';
-import { Group, View } from '../types';
+import { Group } from '../types';
 
 interface GuardianHomeProps {
   guardianGroup: Group | null;
@@ -13,7 +13,6 @@ interface GuardianHomeProps {
   newGroupCode: string;
   setNewGroupCode: (val: string) => void;
   onUpdateGroupCode: () => void;
-  onSelectSenior: (senior: { id: string; name: string }) => void;
   onResetRole: () => void;
 }
 
@@ -26,7 +25,6 @@ const GuardianHome: React.FC<GuardianHomeProps> = ({
   newGroupCode,
   setNewGroupCode,
   onUpdateGroupCode,
-  onSelectSenior,
   onResetRole
 }) => {
   return (
@@ -92,10 +90,9 @@ const GuardianHome: React.FC<GuardianHomeProps> = ({
         </div>
       ) : (
         seniors.map(senior => (
-          <div 
+          <div
             key={senior.id}
-            onClick={() => onSelectSenior(senior)}
-            className="bg-white p-6 rounded-[32px] border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center cursor-pointer active:translate-x-1 active:translate-y-1 active:shadow-none overflow-hidden gap-4"
+            className="bg-white p-6 rounded-[32px] border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center overflow-hidden"
           >
             <div className="flex-1 min-w-0">
               <p className="text-2xl font-black truncate">{senior.name}</p>
@@ -103,7 +100,6 @@ const GuardianHome: React.FC<GuardianHomeProps> = ({
                 {seniorStatus[senior.id] || "상태 확인 중..."}
               </p>
             </div>
-            <ChevronLeft className="w-8 h-8 rotate-180 flex-shrink-0" />
           </div>
         ))
       )}
