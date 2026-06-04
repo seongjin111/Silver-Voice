@@ -66,9 +66,8 @@ const OverlayModals: React.FC<OverlayModalsProps> = ({
                 onClick={() => {
                   const scheduleToConfirm = activeReminder;
                   setActiveReminder(null);
-                  const dueMeds = medications.filter(m => 
-                    m.status === 'approved' && 
-                    !m.takenToday && 
+                  const dueMeds = medications.filter(m =>
+                    !m.takenToday &&
                     m.schedule.includes(scheduleToConfirm)
                   );
                   if (dueMeds.length > 0) {

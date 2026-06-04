@@ -190,11 +190,8 @@ function AppContent() {
                 if (med.userId === seniorId) meds.push(med);
               }
             }
-            const pendingCount = meds.filter(m => m.status === 'pending_approval').length;
-            const untakenCount = meds.filter(m => m.status === 'approved' && !m.takenToday).length;
-            let statusText = "모두 복용함";
-            if (pendingCount > 0) statusText = `${pendingCount}건 승인 대기`;
-            else if (untakenCount > 0) statusText = `${untakenCount}건 미복용`;
+            const untakenCount = meds.filter(m => !m.takenToday).length;
+            let statusText = untakenCount > 0 ? `${untakenCount}건 미복용` : "모두 복용함";
             setSeniorStatus(prev => ({ ...prev, [seniorId]: statusText }));
           } else {
             const sDoc = await getDocFromServer(doc(db, 'users', seniorId));
@@ -224,9 +221,7 @@ function AppContent() {
     if (!user || profile?.role !== 'guardian' || user.uid.startsWith('mock_') || seniors.length === 0) return;
 
     const computeStatus = (meds: any[]) => {
-      const pendingCount = meds.filter(m => m.status === 'pending_approval').length;
-      const untakenCount = meds.filter(m => m.status === 'approved' && !m.takenToday).length;
-      if (pendingCount > 0) return `${pendingCount}건 승인 대기`;
+      const untakenCount = meds.filter(m => !m.takenToday).length;
       if (untakenCount > 0) return `${untakenCount}건 미복용`;
       return "모두 복용함";
     };
@@ -287,7 +282,7 @@ function AppContent() {
       else if (hour >= 17 && hour < 21) targetSchedule = "evening";
 
       if (targetSchedule) {
-        const dueMeds = medications.filter(m => m.status === 'approved' && !m.takenToday && m.schedule.includes(targetSchedule));
+        const dueMeds = medications.filter(m => !m.takenToday && m.schedule.includes(targetSchedule));
         if (dueMeds.length > 0) {
           const name = targetSchedule === "morning" ? "아침" : targetSchedule === "afternoon" ? "점심" : "저녁";
           const msg = `어르신, ${name} 약 드실 시간이에요. 드시고 나서 꼭 '먹었어'라고 말씀해 주세요.`;
@@ -320,10 +315,10 @@ function AppContent() {
         if (isForReminder && activeReminder) {
           const target = activeReminder;
           setActiveReminder(null);
-          const due = medications.filter(m => m.status === 'approved' && !m.takenToday && m.schedule.includes(target));
+          const due = medications.filter(m => !m.takenToday && m.schedule.includes(target));
           if (due.length > 0) handleTakeMed(due[0]);
         } else {
-          const untaken = medications.filter(m => m.status === 'approved' && !m.takenToday);
+          const untaken = medications.filter(m => !m.takenToday);
           if (untaken.length > 0) handleTakeMed(untaken[0]);
         }
       }
@@ -507,7 +502,7 @@ function AppContent() {
         pharmacyName,
         medications: info.map((m, idx) => ({ ...m, id: `item_${idx}` })),
         takenToday: false,
-        status: (profile?.role === 'solo' || profile?.role === 'guardian') ? 'approved' : 'pending_approval',
+        status: 'approved',
         createdAt: Timestamp.now(),
         imageUrl: base64,
         timesPerDay: 0, 
