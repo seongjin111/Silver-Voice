@@ -158,8 +158,9 @@ const MedicationEditView: React.FC<MedicationEditViewProps> = ({
 
           <div className="flex flex-col gap-3 mt-2">
             {isRegistration ? (
-              <Button 
-                onClick={() => onApprove(editingMed)} 
+              <Button
+                type="button"
+                onClick={() => onApprove(editingMed)}
                 variant="primary"
                 className={`py-5 text-3xl ${!isValid ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                 disabled={!isValid}

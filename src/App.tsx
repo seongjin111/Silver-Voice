@@ -523,17 +523,23 @@ function AppContent() {
   };
 
   const handleFinalizeRegistration = async (med: MedicationPouch) => {
-    if (user?.uid.startsWith('mock_')) {
-      const id = `mock_med_${Date.now()}`;
-      const newMed = { ...med, id, createdAt: new Date().toISOString() };
-      localStorage.setItem(`med_${id}`, JSON.stringify(newMed));
-      setMedications(prev => [newMed, ...prev]);
-    } else {
-      await addDoc(collection(db, 'medications'), med);
+    try {
+      if (user?.uid.startsWith('mock_')) {
+        const id = `mock_med_${Date.now()}`;
+        const newMed = { ...med, id, createdAt: new Date().toISOString() };
+        localStorage.setItem(`med_${id}`, JSON.stringify(newMed));
+        setMedications(prev => [newMed, ...prev]);
+      } else {
+        await addDoc(collection(db, 'medications'), med);
+      }
+      setView(View.MAIN);
+      setFeedback("약봉투가 성공적으로 등록되었습니다.");
+      setTimeout(() => setFeedback(null), 5000);
+    } catch (error) {
+      console.error('약 등록 오류:', error);
+      setFeedback("등록 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      setTimeout(() => setFeedback(null), 4000);
     }
-    setView(View.MAIN);
-    setFeedback("약봉투가 성공적으로 등록되었습니다.");
-    setTimeout(() => setFeedback(null), 5000);
   };
 
   const handleSeedMockData = async () => {

@@ -48,8 +48,8 @@ service cloud.firestore {
     }
 
     function isValidMedication(data) {
-      return data.keys().hasAll(['name', 'schedule', 'userId', 'takenToday', 'createdAt', 'status']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+      return data.keys().hasAll(['pouchName', 'schedule', 'userId', 'takenToday', 'createdAt', 'status']) &&
+             data.pouchName is string && data.pouchName.size() > 0 && data.pouchName.size() < 200 &&
              data.schedule is list && data.schedule.size() > 0 &&
              data.userId is string &&
              data.takenToday is bool &&
