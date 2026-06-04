@@ -175,15 +175,14 @@ function AppContent() {
 
     const syncGuardianData = async (groupData: Group) => {
       setGuardianGroup(groupData);
-      const seniorList = [];
+      const seniorList: {id: string, name: string}[] = [];
       for (const seniorId of groupData.memberIds) {
         try {
           let sName = '어르신';
-          let meds: any[] = [];
-
           if (user.uid.startsWith('mock_')) {
             const sp = JSON.parse(localStorage.getItem(`profile_${seniorId}`) || '{}');
             sName = sp.name || '어르신';
+            const meds: any[] = [];
             for (let i = 0; i < localStorage.length; i++) {
               const key = localStorage.key(i);
               if (key?.startsWith('med_')) {
@@ -191,21 +190,17 @@ function AppContent() {
                 if (med.userId === seniorId) meds.push(med);
               }
             }
+            const pendingCount = meds.filter(m => m.status === 'pending_approval').length;
+            const untakenCount = meds.filter(m => m.status === 'approved' && !m.takenToday).length;
+            let statusText = "모두 복용함";
+            if (pendingCount > 0) statusText = `${pendingCount}건 승인 대기`;
+            else if (untakenCount > 0) statusText = `${untakenCount}건 미복용`;
+            setSeniorStatus(prev => ({ ...prev, [seniorId]: statusText }));
           } else {
             const sDoc = await getDocFromServer(doc(db, 'users', seniorId));
             if (sDoc.exists()) sName = sDoc.data().name;
-            const q = query(collection(db, 'medications'), where('userId', '==', seniorId));
-            const mSnap = await getDocs(q);
-            meds = mSnap.docs.map(d => d.data());
           }
-
           seniorList.push({ id: seniorId, name: sName });
-          const pendingCount = meds.filter(m => m.status === 'pending_approval').length;
-          const untakenCount = meds.filter(m => m.status === 'approved' && !m.takenToday).length;
-          let statusText = "모두 복용함";
-          if (pendingCount > 0) statusText = `${pendingCount}건 승인 대기`;
-          else if (untakenCount > 0) statusText = `${untakenCount}건 미복용`;
-          setSeniorStatus(prev => ({ ...prev, [seniorId]: statusText }));
         } catch (e) { console.error(e); }
       }
       setSeniors(seniorList);
@@ -223,6 +218,29 @@ function AppContent() {
       }, (error) => console.error("Guardian sync error:", error));
     }
   }, [user, profile]);
+
+  // 피보호자 약 복용 상태 실시간 감지 (Firestore 전용)
+  useEffect(() => {
+    if (!user || profile?.role !== 'guardian' || user.uid.startsWith('mock_') || seniors.length === 0) return;
+
+    const computeStatus = (meds: any[]) => {
+      const pendingCount = meds.filter(m => m.status === 'pending_approval').length;
+      const untakenCount = meds.filter(m => m.status === 'approved' && !m.takenToday).length;
+      if (pendingCount > 0) return `${pendingCount}건 승인 대기`;
+      if (untakenCount > 0) return `${untakenCount}건 미복용`;
+      return "모두 복용함";
+    };
+
+    const unsubscribers = seniors.map(senior => {
+      const q = query(collection(db, 'medications'), where('userId', '==', senior.id));
+      return onSnapshot(q, (snapshot) => {
+        const meds = snapshot.docs.map(d => d.data());
+        setSeniorStatus(prev => ({ ...prev, [senior.id]: computeStatus(meds) }));
+      }, (error) => console.error("Senior med sync error:", error));
+    });
+
+    return () => unsubscribers.forEach(u => u());
+  }, [user, profile, seniors]);
 
   useEffect(() => {
     if (!selectedSenior) return;
